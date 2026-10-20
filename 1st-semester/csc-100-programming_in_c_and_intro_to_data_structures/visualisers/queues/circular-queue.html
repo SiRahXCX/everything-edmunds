@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circular Queue Insertion & Operation Visualizer (GeeksforGeeks Analysis)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 md:p-8">
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl text-center mb-6">
+        <h1 class="text-3xl font-bold text-indigo-400 mb-2">Circular Queue Visualization</h1>
+        <p class="text-slate-400 text-sm">Based on GeeksforGeeks DSA concepts: Efficient memory reuse using modulo arithmetic <code>(rear + 1) % capacity</code>.</p>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-4xl bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-700 flex flex-col gap-6">
+
+        <!-- Queue Status Panel -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700 text-center">
+            <div>
+                <span class="block text-xs text-slate-400 uppercase tracking-wider">Capacity</span>
+                <span id="stat-capacity" class="text-xl font-bold text-slate-200">5</span>
+            </div>
+            <div>
+                <span class="block text-xs text-slate-400 uppercase tracking-wider">Current Size</span>
+                <span id="stat-size" class="text-xl font-bold text-indigo-400">0</span>
+            </div>
+            <div>
+                <span class="block text-xs text-slate-400 uppercase tracking-wider">Front Pointer</span>
+                <span id="stat-front" class="text-xl font-bold text-emerald-400">0</span>
+            </div>
+            <div>
+                <span class="block text-xs text-slate-400 uppercase tracking-wider">Rear Pointer</span>
+                <span id="stat-rear" class="text-xl font-bold text-amber-400">-1</span>
+            </div>
+        </div>
+
+        <!-- Visual Array Representation -->
+        <div class="flex flex-col items-center justify-center py-6 bg-slate-900/80 rounded-xl border border-slate-700 relative overflow-hidden">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-6">Array Slot Layout (Ring Buffer View)</h3>
+            
+            <div id="queue-container" class="flex flex-wrap justify-center gap-3 sm:gap-4 my-2">
+                <!-- Dynamically populated via JS -->
+            </div>
+
+            <div class="flex items-center gap-6 mt-6 text-xs text-slate-400">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> Front</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Rear</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span> Occupied</div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-700 inline-block"></span> Empty</div>
+            </div>
+        </div>
+
+        <!-- Interactive Controls -->
+        <div class="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <input type="number" id="inputValue" placeholder="Enter value" class="bg-slate-800 border border-slate-700 text-slate-100 px-4 py-2 rounded-lg focus:outline-none focus:border-indigo-500 w-full md:w-40">
+                <button onclick="handleEnqueue()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2 rounded-lg transition shadow-lg shadow-indigo-600/20 whitespace-nowrap">Enqueue</button>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <button onclick="handleDequeue()" class="bg-rose-600/80 hover:bg-rose-600 text-white font-medium px-5 py-2 rounded-lg transition">Dequeue</button>
+                <button onclick="loadPreset()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium px-4 py-2 rounded-lg transition text-sm">Load Preset</button>
+                <button onclick="handleReset()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 font-medium px-4 py-2 rounded-lg transition text-sm border border-slate-700">Reset</button>
+            </div>
+        </div>
+
+        <!-- Log / Message Box -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 min-h-[70px] flex items-center">
+            <p id="log-message" class="text-sm text-slate-300 font-mono">Ready. Enter a value to test circular queue insertion.</p>
+        </div>
+
+        <!-- Formula & Rules Reference Card -->
+        <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-700/60 text-xs text-slate-400 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <span class="font-semibold text-slate-300 block mb-1">📌 Enqueue Rule:</span>
+                <code class="text-indigo-300 bg-slate-900 px-2 py-1 rounded block">rear = (rear + 1) % capacity</code>
+                <span class="block mt-1">If <code>size == capacity</code>, the queue is Full!</span>
+            </div>
+            <div>
+                <span class="font-semibold text-slate-300 block mb-1">📌 Dequeue Rule:</span>
+                <code class="text-emerald-300 bg-slate-900 px-2 py-1 rounded block">front = (front + 1) % capacity</code>
+                <span class="block mt-1">If <code>size == 0</code>, the queue is Empty!</span>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 text-xs text-slate-500 text-center">
+        Interactive Circular Queue Demonstration &bull; Built for DSA Learning
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const CAPACITY = 5;
+        let queue = new Array(CAPACITY).fill(null);
+        let front = 0;
+        let rear = -1;
+        let size = 0;
+
+        function updateUI(message, isError = false) {
+            document.getElementById('stat-capacity').innerText = CAPACITY;
+            document.getElementById('stat-size').innerText = size;
+            document.getElementById('stat-front').innerText = size === 0 ? '-' : front;
+            document.getElementById('stat-rear').innerText = rear;
+
+            const container = document.getElementById('queue-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < CAPACITY; i++) {
+                const val = queue[i];
+                const isFront = (size > 0 && i === front);
+                const isRear = (size > 0 && i === rear);
+
+                let badgeHtml = '';
+                if (isFront && isRear) {
+                    badgeHtml = `<div class="absolute -top-3 left-1/2 -translate-x-1/2 flex gap-1"><span class="bg-emerald-500 text-slate-950 font-bold text-[10px] px-1.5 rounded-full">F</span><span class="bg-amber-500 text-slate-950 font-bold text-[10px] px-1.5 rounded-full">R</span></div>`;
+                } else if (isFront) {
+                    badgeHtml = `<div class="absolute -top-3 left-1/2 -translate-x-1/2"><span class="bg-emerald-500 text-slate-950 font-bold text-[10px] px-1.5 rounded-full">FRONT</span></div>`;
+                } else if (isRear) {
+                    badgeHtml = `<div class="absolute -top-3 left-1/2 -translate-x-1/2"><span class="bg-amber-500 text-slate-950 font-bold text-[10px] px-1.5 rounded-full">REAR</span></div>`;
+                }
+
+                const slot = document.createElement('div');
+                slot.className = `relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex flex-col items-center justify-center border transition-all duration-300 ${
+                    val !== null 
+                        ? 'bg-indigo-950/60 border-indigo-500 text-indigo-200 shadow-lg shadow-indigo-900/20' 
+                        : 'bg-slate-800 border-slate-700 text-slate-500'
+                }`;
+
+                slot.innerHTML = `
+                    ${badgeHtml}
+                    <span class="text-xs text-slate-500 absolute top-1 left-2">${i}</span>
+                    <span class="text-xl font-bold mt-2">${val !== null ? val : '&bull;'}</span>
+                `;
+                container.appendChild(slot);
+            }
+
+            const logEl = document.getElementById('log-message');
+            logEl.innerText = message;
+            logEl.className = `text-sm font-mono ${isError ? 'text-rose-400 font-semibold' : 'text-slate-300'}`;
+        }
+
+        function handleEnqueue() {
+            const input = document.getElementById('inputValue');
+            const val = parseInt(input.value);
+
+            if (isNaN(val)) {
+                updateUI("Please enter a valid integer to enqueue.", true);
+                return;
+            }
+
+            if (size === CAPACITY) {
+                updateUI(`Queue is FULL! Cannot insert ${val}. (size == capacity)`, true);
+                return;
+            }
+
+            rear = (rear + 1) % CAPACITY;
+            queue[rear] = val;
+            size++;
+
+            input.value = '';
+            updateUI(`Successfully enqueued ${val} at index ${rear} using formula: rear = (rear + 1) % ${CAPACITY}`);
+        }
+
+        function handleDequeue() {
+            if (size === 0) {
+                updateUI("Queue is EMPTY! No elements to dequeue.", true);
+                return;
+            }
+
+            const removed = queue[front];
+            queue[front] = null;
+            front = (front + 1) % CAPACITY;
+            size--;
+
+            if (size === 0) {
+                front = 0;
+                rear = -1;
+            }
+
+            updateUI(`Dequeued ${removed} from front. Front moved to index ${size === 0 ? '-' : front}.`);
+        }
+
+        function loadPreset() {
+            queue = [14, 22, 6, 20, null];
+            front = 0;
+            rear = 3;
+            size = 4;
+            updateUI("Loaded preset example! Queue contains 4 elements. Try enqueuing one more value to test wrap-around.");
+        }
+
+        function handleReset() {
+            queue = new Array(CAPACITY).fill(null);
+            front = 0;
+            rear = -1;
+            size = 0;
+            updateUI("Queue reset to initial state.");
+        }
+
+        // Initialize display
+        updateUI("Queue initialized with capacity 5.");
+    </script>
+</body>
+</html>
